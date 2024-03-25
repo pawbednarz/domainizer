@@ -1,7 +1,7 @@
 package com.domainizer.vulnscanner.service.scanner;
 
-import com.domainizer.vulnscanner.model.OpenPort;
 import com.domainizer.vulnscanner.model.IpPortScanHelper;
+import com.domainizer.vulnscanner.model.OpenPort;
 import com.domainizer.vulnscanner.model.SecurityIssue;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSch;
@@ -162,7 +162,6 @@ public class WeakSSHCredentialsService implements IVulnScanner {
         } catch (Exception e) {
             logger.info("SSH authentication failed on " + host + ":" + port + "for " + username + ":" + password);
             logger.error(Arrays.toString(e.getStackTrace()));
-            e.printStackTrace();
         } finally {
             if (session != null) {
                 session.disconnect();

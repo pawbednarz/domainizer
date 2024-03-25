@@ -1,34 +1,20 @@
 package com.domainizer.vulnscanner.service.scanner;
 
-import com.domainizer.util.Utils;
+import com.domainizer.vulnscanner.model.IpPortScanHelper;
 import com.domainizer.vulnscanner.model.OpenPort;
 import com.domainizer.vulnscanner.model.SecurityIssue;
-import com.domainizer.vulnscanner.model.IpPortScanHelper;
-import org.apache.catalina.Host;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.util.MultiValueMap;
 
-import javax.net.ssl.*;
+import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
-import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,17 +22,14 @@ public class HttpHeadersIssuesService implements IVulnScanner {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpHeadersIssuesService.class);
 
-    // TODO maybe implement based on this? https://owasp.org/www-project-secure-headers/ci/headers_add.json
     private final String[] headersToInclude = {
             "content-security-policy",
             "strict-transport-security",
-            // X-Frame-Options only if there is no CSP with frame ancestor
             "x-frame-options",
             "x-content-type-options"
     };
 
     // list got from https://owasp.org/www-project-secure-headers/ci/headers_remove.json
-    // TODO think about implementing automatic updates of that
     private final String[] headersToRemove = {
             "host-header",
             "k-proxy-request",
@@ -124,7 +107,8 @@ public class HttpHeadersIssuesService implements IVulnScanner {
         List<SecurityIssue> securityIssues = new ArrayList<>();
 
         portScanHelperList.forEach(hostData -> {
-            List<OpenPort> openPort = hostData
+
+            List<OpenPort> finalOpenPort = hostData
                     .getOpenPort()
                     .stream()
                     .filter(el -> el.getService().equals("HTTP") ||
@@ -134,48 +118,43 @@ public class HttpHeadersIssuesService implements IVulnScanner {
                             el.getOpenPort() == 443)
                     .collect(Collectors.toList());
 
-            List<OpenPort> finalOpenPort = openPort;
-            hostData.getDomainNames().forEach(domainName -> {
-                finalOpenPort.forEach(port -> {
-                    String protocol = "http";
-                    if (port.getOpenPort() == 443) protocol = "https";
-                    List<String> responseHeaderNames = getHttpHeaders(protocol, domainName, port.getOpenPort());
-                    List<String> toRemove = getHeadersToRemove(responseHeaderNames);
-                    List<String> toInclude = getMissingHeaders(responseHeaderNames);
-                    if (!toRemove.isEmpty()) {
-                        logger.info("Found new issue: Information disclosure in HTTP response headers for " + domainName + ":" + port);
-                        securityIssues.add(new SecurityIssue(
-                                "Information disclosure in HTTP response headers",
-                                "Server returns HTTP headers in response, which may disclose sensitive " +
-                                        "information about the server or application. For example, it can be type of " +
-                                        "framework, or exact version of web server used. Identified headers which may " +
-                                        "potentially leak information are: " + toRemove,
-                                domainName + ":" + port.getOpenPort(),
-                                "Low",
-                                port
-                        ));
-                    }
+            hostData.getDomainNames().forEach(domainName -> finalOpenPort.forEach(port -> {
+                String protocol = "http";
+                if (port.getOpenPort() == 443) protocol = "https";
+                List<String> responseHeaderNames = getHttpHeaders(protocol, domainName, port.getOpenPort());
+                List<String> toRemove = getHeadersToRemove(responseHeaderNames);
+                List<String> toInclude = getMissingHeaders(responseHeaderNames);
+                if (!toRemove.isEmpty()) {
+                    logger.info("Found new issue: Information disclosure in HTTP response headers for " + domainName + ":" + port);
+                    securityIssues.add(new SecurityIssue(
+                            "Information disclosure in HTTP response headers",
+                            "Server returns HTTP headers in response, which may disclose sensitive " +
+                                    "information about the server or application. For example, it can be type of " +
+                                    "framework, or exact version of web server used. Identified headers which may " +
+                                    "potentially leak information are: " + toRemove,
+                            domainName + ":" + port.getOpenPort(),
+                            "Low",
+                            port
+                    ));
+                }
 
-                    if (!toInclude.isEmpty()) {
-                        logger.info("Found new issue: Missing security headers for " + domainName + ":" + port);
-                        securityIssues.add(new SecurityIssue(
-                                "Missing security headers",
-                                "Server does not contain essential HTTP security headers in server response. " +
-                                        "Headers which are recommended to be configured in the server response are " + toInclude,
-                                domainName + ":" + port.getOpenPort(),
-                                "Low",
-                                port
-                        ));
-                    }
-                });
-            });
+                if (!toInclude.isEmpty()) {
+                    logger.info("Found new issue: Missing security headers for " + domainName + ":" + port);
+                    securityIssues.add(new SecurityIssue(
+                            "Missing security headers",
+                            "Server does not contain essential HTTP security headers in server response. " +
+                                    "Headers which are recommended to be configured in the server response are " + toInclude,
+                            domainName + ":" + port.getOpenPort(),
+                            "Low",
+                            port
+                    ));
+                }
+            }));
         });
         return securityIssues;
     }
 
     private List<String> getHttpHeaders(String protocol, String address, int port) {
-        // TODO sometimes does not work with Location header - implement redirect?
-
         URL url;
         try {
             url = new URL(protocol + "://" + address + ":" + port);
@@ -188,27 +167,6 @@ public class HttpHeadersIssuesService implements IVulnScanner {
         } else {
             return getHttpsHeaders(url);
         }
-
-
-//        HttpsURLConnection conn;
-//        try {
-//            conn = (HttpsURLConnection) url.openConnection();
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
-//        conn.setHostnameVerifier((s, sslSession) -> true);
-//
-//        try {
-//            System.out.println(conn.getResponseCode());
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
-//
-//        List<String> headerNames = new ArrayList<>();
-//        conn.getHeaderFields().forEach((k, v) -> {
-//            headerNames.add(k);
-//        });
-//        return headerNames;
     }
 
     private List<String> getHeadersToRemove(List<String> responseHeaderNames) {
@@ -256,9 +214,7 @@ public class HttpHeadersIssuesService implements IVulnScanner {
         }
 
         List<String> headerNames = new ArrayList<>();
-        conn.getHeaderFields().forEach((k, v) -> {
-            headerNames.add(k);
-        });
+        conn.getHeaderFields().forEach((k, v) -> headerNames.add(k));
         return headerNames;
     }
 
@@ -278,9 +234,7 @@ public class HttpHeadersIssuesService implements IVulnScanner {
         }
 
         List<String> headerNames = new ArrayList<>();
-        conn.getHeaderFields().forEach((k, v) -> {
-            headerNames.add(k);
-        });
+        conn.getHeaderFields().forEach((k, v) -> headerNames.add(k));
         return headerNames;
     }
 }

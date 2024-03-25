@@ -7,19 +7,19 @@ import com.domainizer.domainscanner.repository.RunScanRepository;
 import com.domainizer.domainscanner.repository.ScanRepository;
 import com.domainizer.vulnscanner.model.IpPortScanHelper;
 import com.domainizer.vulnscanner.model.OpenPort;
+import com.domainizer.vulnscanner.model.RunVulnScan;
 import com.domainizer.vulnscanner.model.SecurityIssue;
 import com.domainizer.vulnscanner.repository.OpenPortRepository;
 import com.domainizer.vulnscanner.repository.RunVulnScanRepository;
 import com.domainizer.vulnscanner.repository.SecurityIssueRepository;
 import com.domainizer.vulnscanner.service.PortScannerService;
-import com.domainizer.vulnscanner.model.RunVulnScan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,9 +35,11 @@ public class VulnScanService {
     private final OpenPortRepository openPortRepository;
     private final HttpHeadersIssuesService httpHeadersIssuesService;
     private final WeakSSHCredentialsService weakSSHCredentialsService;
+    private final SslIssuesService sslIssuesService;
     private final SecurityIssueRepository securityIssuesRepository;
-
     private final UnencryptedCommunicationService unencryptedCommunicationService;
+
+    private final Map<String, Set<SecurityIssue>> tempSecurityIssues = new ConcurrentHashMap<>();
 
     public VulnScanService(ScanRepository scanRepository,
                            RunScanRepository runScanRepository,
@@ -48,6 +50,7 @@ public class VulnScanService {
                            WeakSSHCredentialsService weakSSHCredentialsService,
                            OpenPortRepository openPortRepository,
                            UnencryptedCommunicationService unencryptedCommunicationService,
+                           SslIssuesService sslIssuesService,
                            SecurityIssueRepository securityIssuesRepository) {
         this.scanRepository = scanRepository;
         this.runScanRepository = runScanRepository;
@@ -57,6 +60,7 @@ public class VulnScanService {
         this.httpHeadersIssuesService = httpHeadersIssuesService;
         this.weakSSHCredentialsService = weakSSHCredentialsService;
         this.openPortRepository = openPortRepository;
+        this.sslIssuesService = sslIssuesService;
         this.unencryptedCommunicationService = unencryptedCommunicationService;
         this.securityIssuesRepository = securityIssuesRepository;
     }
@@ -69,6 +73,8 @@ public class VulnScanService {
     }
 
     private void startScan(Scan scan, RunVulnScan runVulnScan, RunScan runScan) {
+        // create scanKey variable to be able to distinguish scans for the same domain at the same time
+        String scanKey = scan.getId() + "_" + runVulnScan.getId();
         String portsToScan = scan.getVulnScanConfig().getScannedPorts();
         // scan for open ports on target
         List<String> ipAddresses = DomainRepository
@@ -94,33 +100,53 @@ public class VulnScanService {
             }
         }
 
-        List<SecurityIssue> securityIssues = new ArrayList<>();
         List<IVulnScanner> vulnScanners = getVulnScannersBasedOnConfiguration(scan);
         for (IVulnScanner scanner : vulnScanners) {
-            securityIssues.addAll(scanner.runScan(portScanDataList));
+            List<SecurityIssue> issues = scanner.runScan(portScanDataList);
+            updateScanCollection(issues, scanKey);
         }
 
-        securityIssuesRepository.saveAll(securityIssues);
-        System.out.println(securityIssues);
+        onScanFinish(scan, runVulnScan, scanKey);
         logger.info("Vulnerability scan for " + scan.getScannedDomain() + " finished");
     }
 
     private List<IVulnScanner> getVulnScannersBasedOnConfiguration(Scan s) {
         List<IVulnScanner> vulnScanners = new ArrayList<>();
         if (s.getVulnScanConfig().isSecurityHeaders()) vulnScanners.add(httpHeadersIssuesService);
-        //if (s.getVulnScanConfig().isWeakSshCredentials()) vulnScanners.add(weakSSHCredentialsService);
+        if (s.getVulnScanConfig().isWeakSshCredentials()) vulnScanners.add(weakSSHCredentialsService);
         if (s.getVulnScanConfig().isUnencryptedCommunication()) vulnScanners.add(unencryptedCommunicationService);
-//        if (s.getVulnScanConfig().isSslIssues()) vulnScanners.add(SslIssuesService);
+        if (s.getVulnScanConfig().isSslIssues()) vulnScanners.add(sslIssuesService);
         return vulnScanners;
     }
 
+    private void updateScanCollection(List<SecurityIssue> issues, String scanKey) {
+        // get set of issues which is up to date (could be updated by another scanning method)
+        Set<SecurityIssue> issuesSet = tempSecurityIssues.get(scanKey);
+        // add all records to set
+        issuesSet.addAll(issues);
+        // override old set with updated one
+        tempSecurityIssues.put(scanKey, issuesSet);
+    }
+
     private RunVulnScan initializeScanStart(Scan s, RunScan runScan) {
-        //s.setIsRunning(true);
-        //scanRepository.save(s);
+        s.setIsRunning(true);
+        scanRepository.save(s);
         RunVulnScan runVulnScan = new RunVulnScan(runScan);
         runVulnScanRepository.save(runVulnScan);
-        //String key = s.getId() + "_" + runVulnScan.getId();
+        String key = s.getId() + "_" + runVulnScan.getId();
+
+        tempSecurityIssues.put(key, new HashSet<>());
         return runVulnScan;
+    }
+
+    private void onScanFinish(Scan s, RunVulnScan runVulnScan, String scanKey) {
+        runVulnScan.setFinishDateTime(LocalDateTime.now());
+        runVulnScanRepository.save(runVulnScan);
+        s.setIsRunning(false);
+        scanRepository.save(s);
+
+        List<SecurityIssue> issues = new ArrayList<>(tempSecurityIssues.get(scanKey));
+        securityIssuesRepository.saveAll(issues);
     }
 }
 

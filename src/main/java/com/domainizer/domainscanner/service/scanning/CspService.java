@@ -23,7 +23,7 @@ public class CspService implements IDomainScanner {
 
     @Override
     public List<Domain> runScan(Scan s) {
-        logger.info("Running Content Security Policy scan for domain " + s.getScannedDomain() + "(" + s.getName() +")");
+        logger.info("Running Content Security Policy scan for domain " + s.getScannedDomain() + "(" + s.getName() + ")");
         return getCspDomains(s.getScannedDomain());
     }
 

@@ -1,8 +1,8 @@
 package com.domainizer.vulnscanner.service.scanner;
 
+import com.domainizer.vulnscanner.model.IpPortScanHelper;
 import com.domainizer.vulnscanner.model.OpenPort;
 import com.domainizer.vulnscanner.model.SecurityIssue;
-import com.domainizer.vulnscanner.model.IpPortScanHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;

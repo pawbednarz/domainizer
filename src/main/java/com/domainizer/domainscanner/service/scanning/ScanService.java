@@ -58,8 +58,6 @@ public class ScanService {
     }
 
     public void runScan(Long scanId) {
-        // TODO validate and handle error if scan with provided id does not exist
-
         Scan s = scanRepository.findById(scanId).get();
         RunScan runScan = initializeScanStart(s);
         startScan(s, runScan);
@@ -85,13 +83,12 @@ public class ScanService {
         if (s.getDomainScanConfig().isCertificateTransparency()) domainScanners.add(certTransparencyInfoService);
         if (s.getDomainScanConfig().isDnsAggregators()) domainScanners.add(apisService);
         if (s.getDomainScanConfig().isDnsRecords()) domainScanners.add(dnsRecordsService);
-        // TODO for some reason SAN does not work
         if (s.getDomainScanConfig().isSubjectAlternateName()) domainScanners.add(sanService);
         if (s.getDomainScanConfig().isSearchEngines()) domainScanners.add(searchEngineService);
         if (s.getDomainScanConfig().isZoneTransfer()) domainScanners.add(zoneTransferService);
         if (s.getDomainScanConfig().getDictionaryConfig().getDictionaryFile() != null)
             domainScanners.add(dictionarySearchService);
-        if(s.getDomainScanConfig().isHttpHeaders()) domainScanners.add(cspService);
+        if (s.getDomainScanConfig().isHttpHeaders()) domainScanners.add(cspService);
         return domainScanners;
     }
 
@@ -104,22 +101,6 @@ public class ScanService {
         tempDomains.put(scanKey, domainSet);
     }
 
-    private void onScanFinish(Scan s, RunScan runScan, String scanKey) {
-        runScan.setFinishDateTime(LocalDateTime.now());
-        runScanRepository.save(runScan);
-        s.setIsRunning(false);
-        scanRepository.save(s);
-        System.out.println("saving...");
-        Set<Domain> domainsSet = new HashSet<>(tempDomains.get(scanKey));
-        List<Domain> domains = new ArrayList<>(domainsSet);
-        DomainRepository.saveAll(domains
-                .stream()
-                .filter(val -> val.getName().endsWith(s.getScannedDomain()))
-                .filter(val -> !val.getName().startsWith("*"))
-                .filter(val -> !val.getName().equals(s.getScannedDomain()))
-                .collect(Collectors.toList()));
-    }
-
     private RunScan initializeScanStart(Scan s) {
         s.setIsRunning(true);
         scanRepository.save(s);
@@ -129,5 +110,21 @@ public class ScanService {
 
         tempDomains.put(key, new HashSet<>());
         return runScan;
+    }
+
+    private void onScanFinish(Scan s, RunScan runScan, String scanKey) {
+        runScan.setFinishDateTime(LocalDateTime.now());
+        runScanRepository.save(runScan);
+        s.setIsRunning(false);
+        scanRepository.save(s);
+        Set<Domain> domainsSet = new HashSet<>(tempDomains.get(scanKey));
+        List<Domain> domains = new ArrayList<>(domainsSet);
+        DomainRepository.saveAll(domains
+                .stream()
+                .filter(val -> val.getName().endsWith(s.getScannedDomain()))
+                .filter(val -> !val.getName().startsWith("*"))
+                .filter(val -> !val.getName().equals(s.getScannedDomain()))
+                .collect(Collectors.toList()));
+        tempDomains.remove(scanKey);
     }
 }

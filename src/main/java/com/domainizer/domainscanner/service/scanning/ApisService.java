@@ -5,7 +5,6 @@ import com.domainizer.domainscanner.model.DomainSource;
 import com.domainizer.domainscanner.model.Scan;
 import com.domainizer.domainscanner.model.config.AppConfig;
 import com.domainizer.domainscanner.repository.config.AppConfigRepository;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -127,10 +126,10 @@ public class ApisService implements IDomainScanner {
 
         List<Domain> domains = new ArrayList<>();
         if (node.isArray()) {
-            for (JsonNode hitsNode: node) {
-                for (JsonNode innerNode: hitsNode) {
+            for (JsonNode hitsNode : node) {
+                for (JsonNode innerNode : hitsNode) {
                     JsonNode subdomainNode = innerNode.get("reverse_dns").get("names");
-                    for (JsonNode subdomain: subdomainNode) {
+                    for (JsonNode subdomain : subdomainNode) {
                         System.out.println(subdomain);
                         domains.add(new Domain(subdomain.toString(), DomainSource.API_VIRUS_TOTAL, domain));
                     }
@@ -164,7 +163,7 @@ public class ApisService implements IDomainScanner {
 
         List<Domain> domains = new ArrayList<>();
         if (node.isArray()) {
-            for (JsonNode subdomainNode: node) {
+            for (JsonNode subdomainNode : node) {
                 String subdomain = subdomainNode.asText().replace("\"", "");
                 domains.add(new Domain(subdomain + "." + domain, DomainSource.API_VIRUS_TOTAL, domain));
             }
