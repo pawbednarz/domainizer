@@ -5,7 +5,7 @@ echo -e "Set environmental variables required for Domainizer to connect to datab
 echo -e "Before running this script, it is required to:";
 echo -e "\tInstall postgres";
 echo -e "\tCreate database for application";
-echo -e "\tCreate postgres user only for Domainizer database, and grant permissions to CREATE, INSERT, UPDATE and DELETE to created database";
+echo -e "\tCreate postgres user only for Domainizer database, and grant all permissions to created database";
 
 echo -e "Enter value for database hostname/IP:";
 read db_host;
