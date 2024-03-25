@@ -30,5 +30,14 @@ export DOMAINIZER_DB_USER=$db_user;
 export DOMAINIZER_DB_PASSWORD=$db_pass;
 export PGPASSWORD=$db_pass;
 
+echo "export DOMAINIZER_DB_HOST=$db_host;" >> ~/.bashrc
+echo "export DOMAINIZER_DB_PORT=$db_port;" >> ~/.bashrc
+echo "export DOMAINIZER_DB_NAME=$db_name;" >> ~/.bashrc
+echo "export DOMAINIZER_DB_USER=$db_user;" >> ~/.bashrc
+echo "export DOMAINIZER_DB_PASSWORD=$db_pass;" >> ~/.bashrc
+
 # create database in postgres
 psql -U $db_user -h $db_host -p $db_port -d $db_name -f create.sql
+
+echo -e "Configuration completed. Make sure that you have testssl.sh installed in application directory";
+echo -e "In case you want to change any of variables set during configuration, modify them in ~/.bashrc file";
