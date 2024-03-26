@@ -38,6 +38,8 @@ echo "export DOMAINIZER_DB_PASSWORD=$db_pass;" >> ~/.bashrc
 
 # create database in postgres
 psql -U $db_user -h $db_host -p $db_port -d $db_name -f create.sql
+psql -U $db_user -h $db_host -p $db_port -d $db_name -c "INSERT INTO user_data VALUES(1, 'admin', '7a3f9a3f6c11e35c7a443a825112a1d0:9cff5ed4aa32ee25759805c9760539897ade7525765a934f1051c12527f480a3ec3dc58b54810b79a9d14a1e9fa16e9fa48f656fad276807656f2ad9b98e6dbd', 'admin@localhost', 0);"
 
 echo -e "Configuration completed. Make sure that you have testssl.sh installed in application directory";
 echo -e "In case you want to change any of variables set during configuration, modify them in ~/.bashrc file";
+echo -e "\nIMPORTANT! There is default used created with credentials admin:admin. Remember to create new user after logging in and delete the default one created during installation!";
