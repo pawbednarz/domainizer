@@ -107,3 +107,5 @@ ALTER TABLE "open_port" ADD FOREIGN KEY ("run_vuln_scan_id") REFERENCES "run_vul
 ALTER TABLE "security_issue" ADD FOREIGN KEY ("open_port_id") REFERENCES "open_port" ("id_open_port");
 
 ALTER TABLE "run_vuln_scan" ADD FOREIGN KEY ("run_scan_id") REFERENCES "run_scan" ("id_run_scan");
+
+INSERT INTO user_data VALUES(1, 'admin', '7a3f9a3f6c11e35c7a443a825112a1d0:9cff5ed4aa32ee25759805c9760539897ade7525765a934f1051c12527f480a3ec3dc58b54810b79a9d14a1e9fa16e9fa48f656fad276807656f2ad9b98e6dbd', 'admin@localhost', 0);
