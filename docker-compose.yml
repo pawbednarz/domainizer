@@ -1,0 +1,30 @@
+version: '3.9'
+services:
+  frontend:
+    image: menicas/domainizer_frontend:latest
+    restart: always
+    ports:
+      - 3000:80
+
+  db:
+    image: menicas/domainizer_postgres:latest
+    restart: always
+    volumes:
+      - /var/persistent/domainizer/postgres/data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  backend:
+    image: menicas/domainizer:latest
+    restart: always
+    environment:
+      DOMAINIZER_DB_HOST: db
+      DOMAINIZER_DB_PORT: 5432
+      DOMAINIZER_DB_NAME: domainizer
+      DOMAINIZER_DB_USER: postgres
+      DOMAINIZER_DB_PASSWORD: hA&9dNDi2i(2-ds8AH90192HHDJja
+      TZ: UTC
+    volumes:
+      - /var/persistent/domainizer/uploads:/usr/src/app/uploads
+    ports:
+      - 8080:8080
