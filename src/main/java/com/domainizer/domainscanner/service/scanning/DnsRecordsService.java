@@ -7,10 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.xbill.DNS.Record;
-import org.xbill.DNS.Lookup;
-import org.xbill.DNS.SOARecord;
-import org.xbill.DNS.TextParseException;
-import org.xbill.DNS.Type;
+import org.xbill.DNS.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;

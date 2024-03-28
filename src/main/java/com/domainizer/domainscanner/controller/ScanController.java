@@ -1,8 +1,6 @@
 package com.domainizer.domainscanner.controller;
 
 import com.domainizer.domainscanner.model.Scan;
-import com.domainizer.domainscanner.repository.DomainRepository;
-import com.domainizer.domainscanner.repository.RunScanRepository;
 import com.domainizer.domainscanner.repository.ScanRepository;
 import com.domainizer.domainscanner.service.scanning.ScanService;
 import com.domainizer.util.Utils;
@@ -14,7 +12,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -28,18 +25,12 @@ public class ScanController {
 
     static Logger log = LoggerFactory.getLogger(ScanController.class);
     private final ScanRepository scanRepository;
-    private final RunScanRepository runScanRepository;
-    private final DomainRepository DomainRepository;
     private final ScanService scanService;
 
     @Autowired
     public ScanController(ScanRepository scanRepository,
-                          RunScanRepository runScanRepository,
-                          DomainRepository domainRepository,
                           ScanService scanService) {
         this.scanRepository = scanRepository;
-        this.runScanRepository = runScanRepository;
-        this.DomainRepository = domainRepository;
         this.scanService = scanService;
     }
 
@@ -61,10 +52,7 @@ public class ScanController {
 
     // TODO think about parsing binding results and returning message with errors to user
     @PostMapping("/addScan")
-    public ResponseEntity<Scan> addScan(@Valid @RequestBody Scan newScan, BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-
-        }
+    public ResponseEntity<Scan> addScan(@Valid @RequestBody Scan newScan) {
         if (newScan.getDomainScanConfig().getDictionaryConfig().getDictionaryFile() != null) {
             String fileName = Utils.generateFileName();
             String fileData = newScan.getDomainScanConfig().getDictionaryConfig().getDictionaryFile();
