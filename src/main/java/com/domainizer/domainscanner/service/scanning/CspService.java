@@ -3,14 +3,14 @@ package com.domainizer.domainscanner.service.scanning;
 import com.domainizer.domainscanner.model.Domain;
 import com.domainizer.domainscanner.model.DomainSource;
 import com.domainizer.domainscanner.model.Scan;
+import com.domainizer.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import javax.net.ssl.*;
+import java.net.URL;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,13 +28,14 @@ public class CspService implements IDomainScanner {
     }
 
     private List<Domain> getCspDomains(String domain) {
-        HttpResponse response = makeHttpRequest(domain);
-        String cspValue = response.headers().firstValue("Content-Security-Policy").orElse(null);
         List<Domain> domains = new ArrayList<>();
-        if (cspValue != null) {
+        String cspValue = getCspValue(domain);
+        if (cspValue != null && !cspValue.equals("")) {
+            cspValue = cspValue.replace(";", "");
             String[] splitCspValues = cspValue.split(" ");
             domains.addAll(Arrays.stream(splitCspValues)
                     .filter(v -> v.endsWith(domain))
+                    .filter(v -> !v.startsWith("*"))
                     .map(v -> new Domain(v, DomainSource.CSP, domain))
                     .collect(Collectors.toList())
             );
@@ -42,17 +43,27 @@ public class CspService implements IDomainScanner {
         return domains;
     }
 
-    private HttpResponse makeHttpRequest(String domain) {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://" + domain))
-                .build();
-        HttpResponse response = null;
+    private String getCspValue(String domain) {
+        HttpsURLConnection conn = null;
         try {
-            response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+            URL url = new URL("https://" + domain);
+            conn = (HttpsURLConnection) url.openConnection();
+            conn.setHostnameVerifier((s, sslSession) -> true);
+            SSLContext sc = SSLContext.getInstance("SSL");
+            sc.init(null, Utils.trustAllCerts, new SecureRandom());
+            conn.setSSLSocketFactory(sc.getSocketFactory());
         } catch (Exception e) {
-            logger.error("Error trying to get CSP header for domain - " + e.getMessage());
+            logger.error("Error when trying to get CSP header from https://" + domain);
             logger.error(Arrays.toString(e.getStackTrace()));
         }
-        return response;
+        String result = null;
+        if (conn != null && conn.getHeaderFields() != null) {
+            if (conn.getHeaderFields().containsKey("content-security-policy")) {
+                result = conn.getHeaderField("content-security-policy");
+            } else if (conn.getHeaderFields().containsKey("Content-Security-Policy")) {
+                result = conn.getHeaderField("Content-Security-Policy");
+            }
+        }
+        return result;
     }
 }
