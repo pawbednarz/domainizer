@@ -41,15 +41,7 @@ public class DomainScanConfig {
     @JoinColumn(name = "dictionary_config", referencedColumnName = "id_dictionary_config")
     private DictionaryConfig dictionaryConfig;
 
-    @NotNull
-    @Column(name = "modified_date")
-    private LocalDateTime modifiedDate;
-
-    @Column(name = "modified_by")
-    private String modifiedBy;
-
     public DomainScanConfig() {
-        this.modifiedDate = LocalDateTime.now();
     }
 
     public DomainScanConfig(@NotNull boolean zoneTransfer,
@@ -68,8 +60,6 @@ public class DomainScanConfig {
         this.httpHeaders = httpHeaders;
         this.dictionaryConfig = dictionaryConfig;
         this.searchEngines = searchEngines;
-        this.modifiedDate = LocalDateTime.now();
-        this.modifiedBy = "Test User";
     }
 
     public Long getId() {
@@ -142,21 +132,5 @@ public class DomainScanConfig {
 
     public void setDictionaryConfig(DictionaryConfig dictionaryConfig) {
         this.dictionaryConfig = dictionaryConfig;
-    }
-
-    public LocalDateTime getModifiedDate() {
-        return modifiedDate;
-    }
-
-    public void setModifiedDate(LocalDateTime modifiedDate) {
-        this.modifiedDate = modifiedDate;
-    }
-
-    public String getModifiedBy() {
-        return modifiedBy;
-    }
-
-    public void setModifiedBy(String modifiedBy) {
-        this.modifiedBy = modifiedBy;
     }
 }
