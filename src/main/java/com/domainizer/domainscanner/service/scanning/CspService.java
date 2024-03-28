@@ -49,7 +49,7 @@ public class CspService implements IDomainScanner {
             URL url = new URL("https://" + domain);
             conn = (HttpsURLConnection) url.openConnection();
             conn.setHostnameVerifier((s, sslSession) -> true);
-            SSLContext sc = SSLContext.getInstance("SSL");
+            SSLContext sc = SSLContext.getInstance("TLSv1.2");
             sc.init(null, Utils.trustAllCerts, new SecureRandom());
             conn.setSSLSocketFactory(sc.getSocketFactory());
         } catch (Exception e) {
