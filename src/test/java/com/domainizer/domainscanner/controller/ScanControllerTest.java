@@ -1,11 +1,11 @@
 package com.domainizer.domainscanner.controller;
 
-import com.domainizer.domainscanner.model.config.VulnScanConfig;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import com.domainizer.domainscanner.model.Scan;
 import com.domainizer.domainscanner.model.config.DictionaryConfig;
 import com.domainizer.domainscanner.model.config.DomainScanConfig;
+import com.domainizer.domainscanner.model.config.VulnScanConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -13,16 +13,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultMatcher;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -79,10 +76,10 @@ class ScanControllerTest {
         String newScanJson = ow.writeValueAsString(newScan);
 
         this.mockMvc.perform(
-                post("/scan/addScan")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(newScanJson)
-        )
+                        post("/scan/addScan")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(newScanJson)
+                )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
@@ -94,7 +91,6 @@ class ScanControllerTest {
     @Test
     void getScan() {
     }
-
 
 
     @Test

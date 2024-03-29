@@ -2,7 +2,6 @@ package com.domainizer.domainscanner.model.config;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
-import java.time.LocalDateTime;
 
 @Entity
 public class DomainScanConfig {
