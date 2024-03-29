@@ -1,5 +1,6 @@
 package com.domainizer;
 
+import com.domainizer.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -13,6 +14,7 @@ public class DomainizerApplication {
     static Logger log = LoggerFactory.getLogger(DomainizerApplication.class);
 
     public static void main(String[] args) {
+        Utils.generateJwtKey();
         SpringApplication.run(DomainizerApplication.class, args);
     }
 }

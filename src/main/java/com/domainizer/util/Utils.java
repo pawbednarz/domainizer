@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -16,21 +17,22 @@ import java.util.Arrays;
 
 public class Utils {
 
-    static Logger log = LoggerFactory.getLogger(Utils.class);
-
     public static TrustManager[] trustAllCerts = new TrustManager[]{
             new X509TrustManager() {
                 public java.security.cert.X509Certificate[] getAcceptedIssuers() {
                     return null;
                 }
+
                 public void checkClientTrusted(
                         java.security.cert.X509Certificate[] certs, String authType) {
                 }
+
                 public void checkServerTrusted(
                         java.security.cert.X509Certificate[] certs, String authType) {
                 }
             }
     };
+    static Logger log = LoggerFactory.getLogger(Utils.class);
 
     public static String generateFileName() {
         try {
@@ -67,6 +69,23 @@ public class Utils {
         } catch (IOException e) {
             log.error("Error when creating and savind dictionary file to disk");
             log.error(Arrays.toString(e.getStackTrace()));
+        }
+    }
+
+    public static void generateJwtKey() {
+        File key = new File("jwt.key");
+        if (!key.exists()) {
+            SecureRandom sr = new SecureRandom();
+            byte[] byteArray = new byte[2048];
+            sr.nextBytes(byteArray);
+
+            try {
+                FileOutputStream fos = new FileOutputStream(key);
+                fos.write(byteArray);
+                fos.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }
