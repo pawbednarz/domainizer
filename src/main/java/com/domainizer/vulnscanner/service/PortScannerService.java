@@ -8,10 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -78,7 +75,7 @@ public class PortScannerService {
             socket.close();
 
             return service;
-        } catch (Exception ex) {
+        } catch (IOException ex) {
             return null;
         }
     }
@@ -98,61 +95,6 @@ public class PortScannerService {
         else if (banner.contains("sql")) service = "SQL";
         return service;
     }
-
-    // TODO implement concurrency (code below)
-//    private void scanPorts(String address, String portsToScan, RunVulnScan runVulnScan) {
-//        final ExecutorService es = Executors.newFixedThreadPool(20);
-//        final int timeout = 200;
-//        final List<Future<ScanResult>> futures = new ArrayList<>();
-//        for (int port: parsePortsToScan(portsToScan)) {
-//            futures.add(portIsOpen(es, address, port, timeout));
-//        }
-//        try {
-//            es.awaitTermination(200L, TimeUnit.MILLISECONDS);
-//        } catch (InterruptedException e) {
-//            logger.error("Error while waiting for timeout during port scan against {0}", address);
-//            logger.error(Arrays.toString(e.getStackTrace()));
-//        }
-//        List<Integer> openPorts = new ArrayList<>();
-//        for (final Future<ScanResult> f : futures) {
-//            try {
-//                if (f.get().isOpen()) {
-//                    openPorts.add(f.get().getPort());
-//                    openPortRepository.save(new OpenPort(f.get().getPort(), address, runVulnScan));
-//                }
-//            } catch (InterruptedException | ExecutionException e) {
-//                logger.error("Error while running port scan against {0}", address);
-//                logger.error(Arrays.toString(e.getStackTrace()));
-//            }
-//        }
-//    }
-//
-//    private static Future<ScanResult> portIsOpen(final ExecutorService es, final String ip, final int port,
-//                                                final int timeout) {
-//        return es.submit(() -> {
-//            try {
-//                Socket socket = new Socket();
-//                socket.connect(new InetSocketAddress(ip, port), timeout);
-//                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-//                DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
-//                // https://docs.oracle.com/javase/tutorial/networking/sockets/readingWriting.html
-//                // DEBUG
-//                // TODO find a way to determine universally
-//                // for smtp, ftr etc it might be enough to grab a banner
-//                // for HTTP it might be necessary to send GET / HTTP/1.1 line (or also with host header? or just try normal http request?)
-//                System.out.println(in.readLine());
-//                dos.writeByte(0);
-//                dos.flush();
-//                dos.close();
-//                in.close();
-//                socket.close();
-//                System.out.println("test");
-//                return new ScanResult(port, true);
-//            } catch (Exception ex) {
-//                return new ScanResult(port, false);
-//            }
-//        });
-//    }
 
     private int[] parsePortsToScan(String ports) {
         return Arrays.stream(ports.split(","))

@@ -88,12 +88,12 @@ public class VulnScanService {
         List<IpPortScanHelper> portScanDataList = new ArrayList<>();
         // for every address got from DB, create object with contain ipAddress, open ports for address and domains which resolve to that IP
         for (String ipAddress : ipAddresses) {
-            List<OpenPort> op = openPortRepository.findAllByRunVulnScanIdAndIpAddress(runVulnScan, ipAddress);
-            if (!op.isEmpty()) {
+            List<OpenPort> ports = openPortRepository.findAllByRunVulnScanIdAndIpAddress(runVulnScan, ipAddress);
+            if (!ports.isEmpty()) {
                 portScanDataList.add(
                         new IpPortScanHelper(
                                 ipAddress,
-                                op,
+                                ports,
                                 DomainRepository.findAllDomainsByRunScanIdAndIpAddress(runScan, ipAddress)
                         )
                 );

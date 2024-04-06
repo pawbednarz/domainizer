@@ -5,6 +5,8 @@ services:
     restart: always
     ports:
       - 3000:80
+    security_opt:
+      - no-new-privileges:true
 
   db:
     image: menicas/domainizer_postgres:latest
@@ -13,6 +15,8 @@ services:
       - /var/persistent/domainizer/postgres/data:/var/lib/postgresql/data
     ports:
       - "127.0.0.1:5432:5432"
+    security_opt:
+      - no-new-privileges:true
 
   backend:
     image: menicas/domainizer:latest
@@ -28,3 +32,5 @@ services:
       - /var/persistent/domainizer/uploads:/usr/src/app/uploads
     ports:
       - 8080:8080
+    security_opt:
+      - no-new-privileges:true
