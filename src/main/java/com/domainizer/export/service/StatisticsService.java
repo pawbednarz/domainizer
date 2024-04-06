@@ -7,16 +7,21 @@ import com.domainizer.domainscanner.repository.config.AppConfigRepository;
 import com.domainizer.vulnscanner.model.RunVulnScan;
 import com.domainizer.vulnscanner.repository.RunVulnScanRepository;
 import com.domainizer.vulnscanner.repository.SecurityIssueRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.*;
 
 @Service
 public class StatisticsService {
+
+    static Logger log = LoggerFactory.getLogger(StatisticsService.class);
 
     SecurityIssueRepository securityIssueRepository;
     AppConfigRepository appConfigRepository;
@@ -55,12 +60,13 @@ public class StatisticsService {
     }
 
     public Map<String, Boolean> getConfigurationStatistics() {
-        AppConfig config = appConfigRepository.findById(1L).orElse(new AppConfig("", "", "", ""));
+        AppConfig config = appConfigRepository.findById(1L).orElse(new AppConfig("", "", "", "", ""));
         Map<String, Boolean> configurationStatistics = new HashMap<>();
 
         configurationStatistics.put("virusTotal", !config.getVirusTotalKey().equals(""));
         configurationStatistics.put("censys", (!config.getCensysApiSecret().equals("") && !config.getCensysApiId().equals("")));
         configurationStatistics.put("shodan", !config.getShodanApiSecret().equals(""));
+        configurationStatistics.put("apiNinjas", !config.getApiNinjasKey().equals(""));
 
         return configurationStatistics;
     }
@@ -78,5 +84,24 @@ public class StatisticsService {
         jsonResponse.put("recentRunVulnScans", runVulnScanList);
 
         return jsonResponse;
+    }
+
+    public String getWhoisDomainInfo(String domain) {
+        AppConfig config = appConfigRepository.findById(1L).orElse(new AppConfig("", "", "", "", ""));
+        HttpResponse<String> response = null;
+        if (!config.getApiNinjasKey().equals("")) {
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.api-ninjas.com/v1/whois?domain=" + domain))
+                    .header("X-Api-Key", config.getApiNinjasKey())
+                    .build();
+            try {
+                response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            } catch (Exception e) {
+                log.error("Error when getting whois info from API Ninjas - " + e.getMessage());
+                log.error(Arrays.toString(e.getStackTrace()));
+            }
+        }
+        return response.body();
     }
 }

@@ -32,13 +32,13 @@ public class ConfigController {
 
     @GetMapping
     public ResponseEntity<AppConfig> getConfig() {
-        AppConfig config = appConfigRepository.findById(1L).orElse(new AppConfig(null, null, null, null));
+        AppConfig config = appConfigRepository.findById(1L).orElse(new AppConfig("", "", "", "", ""));
         return ResponseEntity.ok(config);
     }
 
     @PostMapping
     public ResponseEntity setConfig(@RequestBody AppConfig appConfig) {
-        AppConfig oldConfig = appConfigRepository.findById(1L).orElse(new AppConfig("", "", "", ""));
+        AppConfig oldConfig = appConfigRepository.findById(1L).orElse(new AppConfig("", "", "", "", ""));
         Map<String, String> errorResponse = new HashMap<>();
         // verify Virus Total key
         if (!appConfig.getVirusTotalKey().isEmpty() &&
@@ -62,7 +62,13 @@ public class ConfigController {
                 !checkShodanApiKey(appConfig.getShodanApiSecret())) {
             errorResponse.put("shodan", "Invalid API key for Shodan");
         }
-        // TODO same thing as above for passive total
+
+        // verify API Ninjas key
+        if (!appConfig.getApiNinjasKey().isEmpty() &&
+                !appConfig.getApiNinjasKey().equals(oldConfig.getApiNinjasKey()) &&
+                !checkApiNinjasKey(appConfig.getApiNinjasKey())) {
+            errorResponse.put("apiNinjas", "Invalid API key for API Ninjas");
+        }
 
         // if there are errors, return them with 400 code
         if (errorResponse.size() > 0) {
@@ -120,6 +126,22 @@ public class ConfigController {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://api.shodan.io/dns/domain/facebook.com?key=" + apiKey))
+                .build();
+        HttpResponse response = null;
+        try {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (Exception e) {
+            log.error("Error when testing connection to Shodan with api key - " + e.getMessage());
+            log.error(Arrays.toString(e.getStackTrace()));
+        }
+        return (response.statusCode() == 200);
+    }
+
+    private boolean checkApiNinjasKey(String apiKey) {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.api-ninjas.com/v1/whois?domain=facebook.com"))
+                .header("X-Api-Key", apiKey)
                 .build();
         HttpResponse response = null;
         try {

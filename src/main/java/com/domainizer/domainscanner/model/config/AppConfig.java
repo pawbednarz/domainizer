@@ -25,14 +25,18 @@ public class AppConfig {
     @Column(name = "shodan_api_secret")
     private String shodanApiSecret;
 
+    @Column(name = "api_ninjas_key")
+    private String apiNinjasKey;
+
     public AppConfig() {
     }
 
-    public AppConfig(String virusTotalKey, String censysApiId, String censysApiSecret, String shodanApiSecret) {
+    public AppConfig(String virusTotalKey, String censysApiId, String censysApiSecret, String shodanApiSecret, String apiNinjasKey) {
         this.virusTotalKey = virusTotalKey;
         this.censysApiId = censysApiId;
         this.censysApiSecret = censysApiSecret;
         this.shodanApiSecret = shodanApiSecret;
+        this.apiNinjasKey = apiNinjasKey;
     }
 
     public Long getId() {
@@ -73,5 +77,13 @@ public class AppConfig {
 
     public void setShodanApiSecret(String shodanApiSecret) {
         this.shodanApiSecret = shodanApiSecret;
+    }
+
+    public String getApiNinjasKey() {
+        return apiNinjasKey;
+    }
+
+    public void setApiNinjasKey(String apiNinjasKey) {
+        this.apiNinjasKey = apiNinjasKey;
     }
 }
