@@ -1,4 +1,4 @@
-package com.domainizer.domainscanner.service.scanning;
+package com.domainizer.domainscanner.service;
 
 import com.domainizer.domainscanner.model.Domain;
 import com.domainizer.domainscanner.model.DomainSource;

@@ -2,7 +2,7 @@ package com.domainizer.domainscanner.controller;
 
 import com.domainizer.domainscanner.model.Scan;
 import com.domainizer.domainscanner.repository.ScanRepository;
-import com.domainizer.domainscanner.service.scanning.ScanService;
+import com.domainizer.domainscanner.service.ScanService;
 import com.domainizer.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
